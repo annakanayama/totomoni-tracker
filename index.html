@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ととモニ 発言トラッカー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --border: #2e3250;
+    --accent: #7c6ef7;
+    --accent2: #4ecdc4;
+    --gold: #f7c948;
+    --silver: #b0b8d1;
+    --bronze: #e0956a;
+    --text: #e8eaf6;
+    --text2: #8890b5;
+    --green: #4ecdc4;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 24px; }
+  .logo-title { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+  .logo-sub { font-size: 11px; color: var(--text2); }
+
+  /* Nav */
+  .nav { display: flex; gap: 4px; }
+  .nav-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--text2);
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { color: var(--text); border-color: var(--border); }
+  .nav-btn.active {
+    background: var(--surface2);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  /* Main */
+  .main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* Page */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.4rem;
+    flex: 1;
+    min-width: 120px;
+  }
+  .stat-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; letter-spacing: 0.05em; }
+  .stat-value { font-size: 22px; font-weight: 700; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.gold { color: var(--gold); }
+  .stat-value.green { color: var(--green); }
+
+  /* Period tabs */
+  .period-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    width: fit-content;
+  }
+  .period-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    padding: 6px 20px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .period-btn.active {
+    background: var(--accent);
+    color: white;
+    font-weight: 500;
+  }
+  .period-date {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    margin-top: -0.5rem;
+  }
+
+  /* Ranking list */
+  .ranking-list { display: flex; flex-direction: column; gap: 6px; }
+  .rank-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  .rank-item:hover { border-color: var(--accent); }
+  .rank-item.rank-1 { border-color: var(--gold); background: linear-gradient(90deg, rgba(247,201,72,0.08) 0%, var(--surface) 100%); }
+  .rank-item.rank-2 { border-color: var(--silver); background: linear-gradient(90deg, rgba(176,184,209,0.06) 0%, var(--surface) 100%); }
+  .rank-item.rank-3 { border-color: var(--bronze); background: linear-gradient(90deg, rgba(224,149,106,0.06) 0%, var(--surface) 100%); }
+
+  .rank-num {
+    font-size: 13px;
+    font-weight: 700;
+    width: 28px;
+    text-align: center;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .rank-1 .rank-num { color: var(--gold); font-size: 16px; }
+  .rank-2 .rank-num { color: var(--silver); font-size: 15px; }
+  .rank-3 .rank-num { color: var(--bronze); font-size: 15px; }
+
+  .rank-name {
+    font-size: 14px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rank-bar-wrap { flex: 2; min-width: 80px; }
+  .rank-bar-bg {
+    background: var(--surface2);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+  }
+  .rank-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s ease;
+  }
+  .rank-1 .rank-bar-fill { background: linear-gradient(90deg, var(--gold), #ffeb9c); }
+  .rank-2 .rank-bar-fill { background: linear-gradient(90deg, var(--silver), #d8ddf0); }
+  .rank-3 .rank-bar-fill { background: linear-gradient(90deg, var(--bronze), #f0c4a0); }
+
+  .rank-count {
+    font-size: 15px;
+    font-weight: 700;
+    width: 50px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .rank-unit { font-size: 11px; color: var(--text2); margin-left: 2px; }
+
+  /* Calendar page */
+  .calendar-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .cal-nav {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    transition: border-color 0.2s;
+  }
+  .cal-nav:hover { border-color: var(--accent); }
+  .cal-month { font-size: 18px; font-weight: 700; }
+
+  .calendar-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-x: auto;
+  }
+
+  .cal-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .cal-member-name {
+    width: 100px;
+    font-size: 11px;
+    color: var(--text2);
+    text-align: right;
+    padding-right: 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cal-header-row .cal-member-name { color: var(--text2); font-size: 10px; }
+  .cal-day-label {
+    width: 22px;
+    font-size: 10px;
+    color: var(--text2);
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .cal-cell {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    position: relative;
+    cursor: default;
+  }
+  .cal-cell[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 26px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  .heat-0 { background: var(--surface2); }
+  .heat-1 { background: #2d3a6e; }
+  .heat-2 { background: #3d52a8; }
+  .heat-3 { background: #5c6fe0; }
+  .heat-4 { background: var(--accent); }
+  .heat-5 { background: #a89eff; }
+
+  /* Legend */
+  .cal-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 1rem;
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .legend-cell {
+    width: 16px; height: 16px; border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <span class="logo-icon">💬</span>
+    <div>
+      <div class="logo-title">ととモニ</div>
+      <div class="logo-sub">発言トラッカー</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('ranking')">ランキング</button>
+    <button class="nav-btn" onclick="showPage('calendar')">履歴カレンダー</button>
+  </nav>
+</div>
+
+<div class="main">
+
+  <!-- ランキングページ -->
+  <div class="page active" id="page-ranking">
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">総メッセージ数</div>
+        <div class="stat-value accent">2,417</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">参加メンバー</div>
+        <div class="stat-value gold">47<span style="font-size:14px;color:var(--text2)"> 人</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">集計チャンネル</div>
+        <div class="stat-value green">18<span style="font-size:14px;color:var(--text2)"> ch</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">集計期間</div>
+        <div class="stat-value" style="font-size:14px;padding-top:4px;">2026/5/8 〜 6/29</div>
+      </div>
+    </div>
+
+    <div class="period-tabs">
+      <button class="period-btn active" onclick="setPeriod('total', this)">トータル</button>
+      <button class="period-btn" onclick="setPeriod('month', this)">月間</button>
+      <button class="period-btn" onclick="setPeriod('week', this)">週間</button>
+    </div>
+    <div class="period-date" id="period-date-label">📅 2026/5/8 〜 2026/6/29</div>
+
+    <div class="ranking-list" id="ranking-list"></div>
+  </div>
+
+  <!-- カレンダーページ -->
+  <div class="page" id="page-calendar">
+    <div class="calendar-header">
+      <button class="cal-nav" onclick="changeMonth(-1)">← 前月</button>
+      <div class="cal-month" id="cal-month-label"></div>
+      <button class="cal-nav" onclick="changeMonth(1)">翌月 →</button>
+    </div>
+    <div style="color:var(--text2);font-size:12px;margin-bottom:1rem;">発言があった日をヒートマップで表示。色が濃いほど発言数が多い日です。</div>
+    <div class="cal-legend">
+      <span>少</span>
+      <div class="legend-cell heat-0"></div>
+      <div class="legend-cell heat-1"></div>
+      <div class="legend-cell heat-2"></div>
+      <div class="legend-cell heat-3"></div>
+      <div class="legend-cell heat-4"></div>
+      <div class="legend-cell heat-5"></div>
+      <span>多</span>
+    </div>
+    <div style="margin-top:1rem; overflow-x:auto;">
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const DATA = {"ぐるぐる":{"total":18,"daily":{"2026-06-13":7,"2026-06-26":5,"2026-06-20":4,"2026-06-12":2},"channels":{"└ 参加はこちら💱":1,"└感想かいてね":2,"└質問板":11,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":2}},"ぶー":{"total":567,"daily":{"2026-06-13":31,"2026-06-14":9,"2026-06-20":34,"2026-06-26":28,"2026-06-29":16,"2026-06-12":13,"2026-06-22":8,"2026-06-23":7,"2026-06-24":26,"2026-06-25":18,"2026-06-27":11,"2026-06-02":9,"2026-06-10":16,"2026-06-17":54,"2026-06-07":20,"2026-05-08":2,"2026-05-23":13,"2026-05-25":6,"2026-05-28":8,"2026-05-29":4,"2026-05-09":12,"2026-05-10":7,"2026-05-14":5,"2026-05-19":10,"2026-06-09":6,"2026-06-18":19,"2026-06-28":15,"2026-05-11":7,"2026-05-12":14,"2026-05-13":5,"2026-05-16":10,"2026-05-17":4,"2026-05-18":7,"2026-05-22":19,"2026-05-24":5,"2026-05-27":6,"2026-05-30":4,"2026-06-06":4,"2026-06-08":5,"2026-05-31":4,"2026-06-15":6,"2026-06-16":11,"2026-06-19":8,"2026-06-21":11,"2026-05-15":2,"2026-05-20":3,"2026-05-21":3,"2026-05-26":3,"2026-06-01":3,"2026-06-03":3,"2026-06-04":2,"2026-06-05":2,"2026-06-11":9},"channels":{"└ 参加はこちら💱":1,"└感想かいてね":28,"└質問板":61,"おさんぽ配信🐾":1,"トーク板":40,"└ワーク記録":42,"あゆむむさん用":17,"🌿｜ルール":1,"🎤｜告知":5,"🧸｜自己紹介":12,"この本読んだよ、読んでるよ":20,"なんでもお話だよ":61,"仲間が現れた！":7,"全体連絡ぶー🐷":57,"おはよう宣言":214}},"よっちゃん":{"total":127,"daily":{"2026-06-13":7,"2026-06-27":2,"2026-06-03":9,"2026-06-10":6,"2026-06-17":7,"2026-06-24":5,"2026-05-09":2,"2026-05-22":4,"2026-06-06":3,"2026-05-10":2,"2026-05-11":2,"2026-05-12":2,"2026-05-13":2,"2026-05-14":2,"2026-05-15":2,"2026-05-16":2,"2026-05-17":1,"2026-05-18":2,"2026-05-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-23":2,"2026-05-24":2,"2026-05-25":2,"2026-05-26":2,"2026-05-27":2,"2026-05-28":2,"2026-05-29":2,"2026-05-30":3,"2026-05-31":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-05":2,"2026-06-07":2,"2026-06-08":2,"2026-06-09":2,"2026-06-11":2,"2026-06-12":2,"2026-06-14":2,"2026-06-15":3,"2026-06-16":2,"2026-06-18":2,"2026-06-19":2,"2026-06-20":2,"2026-06-21":2,"2026-06-22":2,"2026-06-23":1,"2026-06-25":2,"2026-06-28":2},"channels":{"└感想かいてね":4,"└質問板":5,"トーク板":1,"└ワーク記録":18,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":3,"おはよう宣言":94}},"SNOWMAN":{"total":62,"daily":{"2026-06-13":10,"2026-06-20":9,"2026-05-10":4,"2026-05-11":2,"2026-05-12":2,"2026-05-13":1,"2026-05-14":1,"2026-05-15":1,"2026-05-18":1,"2026-05-19":1,"2026-05-20":1,"2026-05-21":1,"2026-05-23":1,"2026-05-25":1,"2026-05-26":1,"2026-05-27":1,"2026-05-28":1,"2026-05-29":1,"2026-05-30":1,"2026-06-01":1,"2026-06-02":1,"2026-06-03":1,"2026-06-04":1,"2026-06-05":1,"2026-06-06":1,"2026-06-08":1,"2026-06-09":1,"2026-06-10":1,"2026-06-11":1,"2026-06-12":1,"2026-06-15":1,"2026-06-16":1,"2026-06-19":1,"2026-06-22":1,"2026-06-23":1,"2026-06-24":1,"2026-06-25":1,"2026-06-26":2,"2026-06-29":1},"channels":{"└感想かいてね":2,"└質問板":15,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":43}},"白ネコ":{"total":83,"daily":{"2026-06-13":8,"2026-06-20":5,"2026-06-03":6,"2026-06-10":6,"2026-06-17":9,"2026-06-24":7,"2026-05-19":2,"2026-05-22":3,"2026-06-06":3,"2026-06-19":1,"2026-06-26":1,"2026-05-21":2,"2026-05-25":2,"2026-05-26":2,"2026-05-27":2,"2026-05-28":2,"2026-05-30":2,"2026-05-31":2,"2026-06-02":2,"2026-06-05":2,"2026-06-09":2,"2026-06-11":2,"2026-06-12":2,"2026-06-15":2,"2026-06-16":2,"2026-06-23":2,"2026-06-27":2},"channels":{"└感想かいてね":5,"└質問板":8,"└ワーク記録":21,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":4,"おはよう宣言":43}},"あゆむむ":{"total":228,"daily":{"2026-06-13":16,"2026-06-26":11,"2026-06-19":9,"2026-06-24":29,"2026-06-25":4,"2026-06-29":1,"2026-06-03":19,"2026-06-10":15,"2026-06-17":8,"2026-06-22":5,"2026-06-28":2,"2026-05-10":5,"2026-05-12":4,"2026-05-19":4,"2026-05-22":3,"2026-05-24":3,"2026-06-06":3,"2026-05-11":4,"2026-05-13":2,"2026-05-14":2,"2026-05-15":2,"2026-05-16":2,"2026-05-17":2,"2026-05-18":5,"2026-05-20":2,"2026-05-21":3,"2026-05-23":3,"2026-05-25":2,"2026-05-26":2,"2026-05-27":4,"2026-05-28":2,"2026-05-29":3,"2026-05-30":4,"2026-05-31":2,"2026-06-01":5,"2026-06-02":4,"2026-06-04":2,"2026-06-05":2,"2026-06-07":2,"2026-06-08":2,"2026-06-09":3,"2026-06-11":2,"2026-06-12":2,"2026-06-14":2,"2026-06-15":7,"2026-06-16":2,"2026-06-18":2,"2026-06-23":2,"2026-06-27":2},"channels":{"└感想かいてね":4,"└質問板":18,"おさんぽ配信🐾":6,"トーク板":10,"└ワーク記録":44,"あゆむむさん用":5,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":6,"全体連絡ぶー🐷":1,"おはよう宣言":132}},"りさ":{"total":82,"daily":{"2026-06-13":5,"2026-06-20":4,"2026-06-26":4,"2026-06-29":11,"2026-06-27":1,"2026-06-03":8,"2026-06-17":5,"2026-06-24":6,"2026-05-09":2,"2026-05-22":1,"2026-05-24":1,"2026-06-04":4,"2026-05-10":1,"2026-05-11":2,"2026-05-12":2,"2026-05-13":2,"2026-05-14":1,"2026-05-19":2,"2026-05-21":2,"2026-05-23":2,"2026-05-26":2,"2026-05-28":2,"2026-05-30":7,"2026-06-18":3,"2026-06-25":2},"channels":{"└感想かいてね":6,"└質問板":5,"トーク板":13,"└ワーク記録":14,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":5,"おはよう宣言":37}},"ena":{"total":120,"daily":{"2026-06-13":9,"2026-06-26":7,"2026-06-23":4,"2026-06-24":9,"2026-06-25":5,"2026-06-03":3,"2026-06-10":1,"2026-06-17":6,"2026-05-09":8,"2026-05-13":4,"2026-06-09":3,"2026-06-21":3,"2026-06-22":4,"2026-05-22":3,"2026-05-23":3,"2026-05-24":4,"2026-06-04":1,"2026-06-06":3,"2026-06-14":2,"2026-06-18":3,"2026-06-19":2,"2026-05-26":3,"2026-05-10":1,"2026-05-11":1,"2026-05-12":2,"2026-05-14":2,"2026-05-15":2,"2026-05-18":1,"2026-05-19":1,"2026-05-20":2,"2026-05-21":1,"2026-05-25":2,"2026-05-28":1,"2026-05-29":2,"2026-06-01":2,"2026-06-05":2,"2026-06-07":1,"2026-06-08":1,"2026-06-11":3,"2026-06-12":1,"2026-06-16":1,"2026-06-29":1},"channels":{"└感想かいてね":4,"└質問板":7,"おさんぽ配信🐾":1,"トーク板":7,"└ワーク記録":13,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":13,"なんでもお話だよ":14,"仲間が現れた！":2,"全体連絡ぶー🐷":2,"おはよう宣言":55}},"Kentaro":{"total":34,"daily":{"2026-06-13":5,"2026-06-20":7,"2026-06-22":5,"2026-06-23":3,"2026-06-12":2,"2026-06-19":2,"2026-06-16":1,"2026-06-18":3,"2026-06-21":1,"2026-06-24":1,"2026-06-25":1,"2026-06-28":1,"2026-06-29":2},"channels":{"└感想かいてね":2,"└質問板":8,"トーク板":4,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":1,"おはよう宣言":17}},"SSS":{"total":8,"daily":{"2026-06-13":5,"2026-06-03":1,"2026-06-02":2},"channels":{"└感想かいてね":1,"└質問板":3,"└ワーク記録":1,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":1}},"あおい":{"total":103,"daily":{"2026-06-13":6,"2026-06-20":6,"2026-06-03":8,"2026-06-10":4,"2026-06-17":7,"2026-06-24":6,"2026-05-09":2,"2026-05-22":3,"2026-06-19":3,"2026-05-10":1,"2026-05-11":2,"2026-05-12":2,"2026-05-13":2,"2026-05-14":2,"2026-05-15":2,"2026-05-16":2,"2026-05-18":2,"2026-05-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-23":1,"2026-05-24":2,"2026-05-25":2,"2026-05-26":2,"2026-05-27":2,"2026-05-28":2,"2026-05-29":2,"2026-05-30":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-09":2,"2026-06-11":2,"2026-06-14":2,"2026-06-15":2,"2026-06-18":2,"2026-06-23":2,"2026-06-26":2,"2026-06-29":2},"channels":{"└感想かいてね":5,"└質問板":8,"└ワーク記録":20,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":3,"おはよう宣言":65}},"チーコ":{"total":20,"daily":{"2026-06-13":2,"2026-06-20":4,"2026-06-17":7,"2026-06-24":7},"channels":{"└感想かいてね":5,"└質問板":4,"└ワーク記録":10,"おはよう宣言":1}},"AZU":{"total":112,"daily":{"2026-06-13":8,"2026-06-20":5,"2026-06-26":3,"2026-06-29":2,"2026-06-03":7,"2026-06-10":5,"2026-06-17":8,"2026-06-24":7,"2026-05-09":2,"2026-05-10":1,"2026-05-12":2,"2026-05-13":2,"2026-05-14":2,"2026-05-15":2,"2026-05-16":2,"2026-05-18":2,"2026-05-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-22":2,"2026-05-23":2,"2026-05-24":2,"2026-05-25":2,"2026-05-26":2,"2026-05-27":2,"2026-05-28":2,"2026-05-29":2,"2026-05-30":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-05":2,"2026-06-06":2,"2026-06-07":2,"2026-06-08":2,"2026-06-11":2,"2026-06-12":2,"2026-06-15":2,"2026-06-16":2,"2026-06-18":2,"2026-06-19":2,"2026-06-23":2},"channels":{"└感想かいてね":6,"└質問板":10,"└ワーク記録":19,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":75}},"bibi4192":{"total":79,"daily":{"2026-06-13":4,"2026-06-20":5,"2026-06-26":3,"2026-06-29":14,"2026-06-03":8,"2026-06-10":6,"2026-06-17":8,"2026-06-24":7,"2026-06-02":2,"2026-06-04":2,"2026-06-05":2,"2026-06-08":2,"2026-06-09":2,"2026-06-11":2,"2026-06-12":2,"2026-06-15":2,"2026-06-19":2,"2026-06-22":2,"2026-06-23":2,"2026-06-25":2},"channels":{"└感想かいてね":7,"└質問板":18,"└ワーク記録":21,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":31}},"chinuyo":{"total":133,"daily":{"2026-06-13":8,"2026-06-20":4,"2026-06-26":3,"2026-06-29":2,"2026-06-03":8,"2026-06-10":5,"2026-06-17":8,"2026-06-24":6,"2026-05-09":2,"2026-05-26":4,"2026-06-19":4,"2026-06-16":3,"2026-05-10":2,"2026-05-11":2,"2026-05-12":2,"2026-05-13":2,"2026-05-14":2,"2026-05-15":2,"2026-05-18":4,"2026-05-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-22":2,"2026-05-23":2,"2026-05-24":2,"2026-05-25":2,"2026-05-27":2,"2026-05-28":2,"2026-05-29":2,"2026-05-30":3,"2026-05-31":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-05":2,"2026-06-08":2,"2026-06-09":2,"2026-06-11":2,"2026-06-12":2,"2026-06-14":2,"2026-06-15":3,"2026-06-18":2,"2026-06-21":2,"2026-06-22":2,"2026-06-23":2,"2026-06-25":2,"2026-06-27":2,"2026-06-28":2},"channels":{"└感想かいてね":5,"└質問板":10,"└ワーク記録":21,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":2,"なんでもお話だよ":1,"全体連絡ぶー🐷":1,"おはよう宣言":91}},"エコし":{"total":22,"daily":{"2026-06-13":6,"2026-06-21":4,"2026-06-20":2,"2026-06-10":2,"2026-06-11":4,"2026-06-12":1,"2026-06-18":1,"2026-06-23":1,"2026-06-24":1},"channels":{"└感想かいてね":2,"└質問板":5,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":13}},"こむぎこ":{"total":41,"daily":{"2026-06-21":2,"2026-06-13":3,"2026-06-20":2,"2026-06-29":4,"2026-06-03":7,"2026-05-09":3,"2026-05-26":1,"2026-06-07":1,"2026-06-17":1,"2026-05-16":2,"2026-05-17":1,"2026-05-18":1,"2026-05-19":3,"2026-05-27":1,"2026-06-19":1,"2026-06-24":1,"2026-06-26":2,"2026-06-27":1,"2026-06-18":2,"2026-05-11":1,"2026-05-23":1},"channels":{"└感想かいてね":1,"└質問板":5,"トーク板":1,"└ワーク記録":7,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":5,"なんでもお話だよ":13,"仲間が現れた！":1,"全体連絡ぶー🐷":3,"おはよう宣言":3}},"ポンマリ":{"total":22,"daily":{"2026-06-26":3,"2026-06-23":3,"2026-06-29":6,"2026-06-20":1,"2026-06-21":3,"2026-06-22":1,"2026-06-24":1,"2026-06-25":2,"2026-06-27":2},"channels":{"└感想かいてね":1,"└質問板":1,"おさんぽ配信🐾":5,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":1,"おはよう宣言":12}},"makky":{"total":65,"daily":{"2026-06-26":4,"2026-06-25":2,"2026-05-22":5,"2026-05-28":4,"2026-06-07":3,"2026-05-23":3,"2026-05-24":2,"2026-05-25":2,"2026-05-26":2,"2026-05-27":2,"2026-05-29":3,"2026-05-31":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-05":2,"2026-06-06":2,"2026-06-08":2,"2026-06-09":1,"2026-06-11":2,"2026-06-12":3,"2026-06-14":2,"2026-06-17":1,"2026-06-19":2,"2026-06-22":2,"2026-06-23":2,"2026-06-27":2,"2026-06-28":2},"channels":{"└感想かいてね":1,"└質問板":2,"トーク板":1,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":1,"なんでもお話だよ":4,"おはよう宣言":54}},"ちえりJV":{"total":98,"daily":{"2026-06-26":5,"2026-06-20":28,"2026-06-29":8,"2026-06-03":10,"2026-06-10":1,"2026-06-17":11,"2026-06-24":6,"2026-05-09":2,"2026-06-04":3,"2026-06-19":2,"2026-05-10":1,"2026-05-12":2,"2026-05-15":1,"2026-05-19":1,"2026-05-23":1,"2026-05-27":2,"2026-05-29":2,"2026-06-01":3,"2026-06-12":3,"2026-06-16":1,"2026-06-18":3,"2026-06-25":2},"channels":{"└感想かいてね":3,"└質問板":2,"トーク板":34,"└ワーク記録":24,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":3,"おはよう宣言":30}},"小海いと🏆":{"total":24,"daily":{"2026-06-29":4,"2026-06-26":5,"2026-06-24":8,"2026-06-17":2,"2026-06-22":2,"2026-06-23":1,"2026-06-25":2},"channels":{"└感想かいてね":2,"└質問板":4,"トーク板":2,"└ワーク記録":5,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":9}},"しょっぺ":{"total":48,"daily":{"2026-06-13":5,"2026-06-10":5,"2026-05-10":3,"2026-05-09":3,"2026-06-16":1,"2026-05-11":1,"2026-05-12":2,"2026-05-14":1,"2026-05-15":1,"2026-05-18":1,"2026-05-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-23":2,"2026-05-26":2,"2026-05-27":2,"2026-06-01":2,"2026-06-02":2,"2026-06-04":2,"2026-06-06":2,"2026-06-11":1,"2026-06-12":1,"2026-06-18":2,"2026-06-28":1},"channels":{"└質問板":4,"└ワーク記録":4,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":2,"全体連絡ぶー🐷":1,"おはよう宣言":35}},"ゆき":{"total":23,"daily":{"2026-06-20":4,"2026-06-03":6,"2026-06-17":7,"2026-05-09":2,"2026-05-16":2,"2026-05-22":2},"channels":{"└質問板":3,"└ワーク記録":11,"└感想かいてね":1,"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":6}},"繁忙期のユウ":{"total":63,"daily":{"2026-06-20":6,"2026-06-22":2,"2026-06-23":2,"2026-06-29":6,"2026-06-03":9,"2026-05-19":2,"2026-05-25":2,"2026-06-06":3,"2026-06-13":1,"2026-06-19":2,"2026-05-20":2,"2026-05-21":2,"2026-05-22":2,"2026-05-23":2,"2026-05-24":2,"2026-05-27":2,"2026-05-28":1,"2026-06-01":2,"2026-06-02":2,"2026-06-05":1,"2026-06-11":2,"2026-06-14":2,"2026-06-21":2,"2026-06-25":1,"2026-06-27":1,"2026-06-28":2},"channels":{"トーク板":13,"└ワーク記録":7,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":4,"おはよう宣言":37}},"どんぐり":{"total":42,"daily":{"2026-06-03":22,"2026-05-19":3,"2026-05-30":5,"2026-05-22":2,"2026-05-23":1,"2026-05-25":2,"2026-05-27":1,"2026-05-29":2,"2026-06-02":2,"2026-06-09":1,"2026-06-27":1},"channels":{"└ワーク記録":18,"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":5,"おはよう宣言":17}},"Tossy":{"total":58,"daily":{"2026-06-10":6,"2026-06-17":8,"2026-05-09":3,"2026-05-21":1,"2026-05-10":1,"2026-05-11":2,"2026-05-12":2,"2026-05-13":1,"2026-05-14":2,"2026-05-18":2,"2026-05-19":2,"2026-05-20":2,"2026-05-22":2,"2026-05-23":3,"2026-05-28":2,"2026-05-29":2,"2026-05-31":2,"2026-06-01":2,"2026-06-06":2,"2026-06-16":2,"2026-06-18":3,"2026-06-19":2,"2026-06-25":2,"2026-06-28":2},"channels":{"└ワーク記録":10,"└感想かいてね":2,"🌸｜挨拶":1,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":1,"仲間が現れた！":1,"おはよう宣言":42}},"長老さん":{"total":49,"daily":{"2026-05-09":3,"2026-05-10":2,"2026-05-26":3,"2026-05-11":2,"2026-05-22":5,"2026-06-04":1,"2026-05-13":1,"2026-05-14":2,"2026-05-15":2,"2026-05-16":2,"2026-05-17":1,"2026-05-18":2,"2026-05-19":1,"2026-05-20":2,"2026-05-23":1,"2026-05-24":2,"2026-05-27":2,"2026-05-29":1,"2026-06-01":1,"2026-06-02":1,"2026-06-05":1,"2026-06-07":1,"2026-06-08":1,"2026-06-09":1,"2026-06-14":1,"2026-06-16":1,"2026-06-19":1,"2026-06-21":2,"2026-06-22":1,"2026-06-23":1,"2026-06-24":1},"channels":{"🌸｜挨拶":2,"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":3,"なんでもお話だよ":6,"おはよう宣言":37}},"イチゴ":{"total":16,"daily":{"2026-05-22":3,"2026-06-19":1,"2026-05-23":2,"2026-05-24":1,"2026-05-25":2,"2026-05-31":2,"2026-06-12":1,"2026-06-22":2,"2026-06-24":1,"2026-06-25":1},"channels":{"なんでもお話だよ":2,"おはよう宣言":14}},"ネココ":{"total":14,"daily":{"2026-05-09":1,"2026-05-19":1,"2026-05-12":3,"2026-05-27":2,"2026-06-22":2,"2026-05-10":1,"2026-05-13":1,"2026-05-16":1,"2026-05-24":1,"2026-06-02":1},"channels":{"🧸｜自己紹介":1,"この本読んだよ、読んでるよ":1,"なんでもお話だよ":3,"全体連絡ぶー🐷":2,"おはよう宣言":7}},"mks":{"total":7,"daily":{"2026-06-10":4,"2026-05-13":3},"channels":{"└ワーク記録":2,"└感想かいてね":1,"🌸｜挨拶":1,"おはよう宣言":3}},"ゆう＠めそ":{"total":3,"daily":{"2026-05-09":2,"2026-05-11":1},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":1}},"momo":{"total":3,"daily":{"2026-05-10":2,"2026-05-24":1},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":1}},"サイ":{"total":5,"daily":{"2026-05-11":2,"2026-05-12":2,"2026-06-22":1},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1,"なんでもお話だよ":2,"全体連絡ぶー🐷":1}},"ひで":{"total":2,"daily":{"2026-06-15":2},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1}},"ミル":{"total":1,"daily":{"2026-06-17":1},"channels":{"🌸｜挨拶":1}},"ルーラ":{"total":2,"daily":{"2026-06-17":1,"2026-06-19":1},"channels":{"🌸｜挨拶":1,"なんでもお話だよ":1}},"にか&しの":{"total":2,"daily":{"2026-06-27":2},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1}},"たけち":{"total":2,"daily":{"2026-06-27":2},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1}},"浩哉！！":{"total":5,"daily":{"2026-06-27":2,"2026-06-28":1,"2026-06-29":2},"channels":{"🌸｜挨拶":1,"🧸｜自己紹介":1,"おはよう宣言":3}},"S.Hiro":{"total":4,"daily":{"2026-06-28":2,"2026-06-29":2},"channels":{"🌸｜挨拶":1,"仲間が現れた！":1,"おはよう宣言":2}},"しょうへい":{"total":1,"daily":{"2026-06-28":1},"channels":{"🌸｜挨拶":1}},"さくらんぼ色のねずみ":{"total":2,"daily":{"2026-06-29":1,"2026-06-28":1},"channels":{"└質問板":1,"🌸｜挨拶":1}},"アンドウ":{"total":1,"daily":{"2026-05-09":1},"channels":{"🌸｜挨拶":1}},"しょう":{"total":3,"daily":{"2026-06-13":3},"channels":{"└質問板":2,"仲間が現れた！":1}},"よっつ":{"total":6,"daily":{"2026-05-12":1,"2026-06-06":1,"2026-05-16":2,"2026-05-17":2},"channels":{"🧸｜自己紹介":1,"なんでもお話だよ":1,"おはよう宣言":4}},"🍆ほっとなす🍆":{"total":3,"daily":{"2026-06-25":1,"2026-06-26":1,"2026-06-29":1},"channels":{"🧸｜自己紹介":1,"おはよう宣言":2}},"ペーター":{"total":4,"daily":{"2026-06-26":1,"2026-06-16":1,"2026-06-17":2},"channels":{"なんでもお話だよ":1,"全体連絡ぶー🐷":3}}};
+
+let currentPeriod = 'total';
+let currentMonth = '2026-06';
+let calYear = 2026, calMonth = 6;
+
+function getScore(member, period) {
+  const d = DATA[member];
+  if (period === 'total') return d.total;
+  const now = new Date('2026-06-29');
+  if (period === 'week') {
+    const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 6);
+    return Object.entries(d.daily).filter(([dt]) => new Date(dt) >= cutoff).reduce((s,[,v])=>s+v,0);
+  }
+  if (period === 'month') {
+    return Object.entries(d.daily).filter(([dt]) => dt.startsWith('2026-06')).reduce((s,[,v])=>s+v,0);
+  }
+  return 0;
+}
+
+function renderRanking() {
+  const list = document.getElementById('ranking-list');
+  const members = Object.keys(DATA).map(m => ({ name: m, score: getScore(m, currentPeriod) }))
+    .filter(m => m.score > 0)
+    .sort((a, b) => b.score - a.score);
+  const max = members[0]?.score || 1;
+  list.innerHTML = members.map((m, i) => {
+    const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+    const rankLabel = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+    const pct = Math.round(m.score / max * 100);
+    return `<div class="rank-item ${rankClass}">
+      <div class="rank-num">${rankLabel}</div>
+      <div class="rank-name">${m.name}</div>
+      <div class="rank-bar-wrap">
+        <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${pct}%"></div></div>
+      </div>
+      <div class="rank-count">${m.score}<span class="rank-unit">件</span></div>
+    </div>`;
+  }).join('');
+}
+
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = document.getElementById('period-date-label');
+  if (period === 'total') label.textContent = '📅 2026/5/8 〜 2026/6/29';
+  if (period === 'month') label.textContent = '📅 2026/6/1 〜 2026/6/29';
+  if (period === 'week') label.textContent = '📅 2026/6/23 〜 2026/6/29';
+  renderRanking();
+}
+
+function renderCalendar() {
+  const label = document.getElementById('cal-month-label');
+  label.textContent = `${calYear}年${calMonth}月`;
+  const daysInMonth = new Date(calYear, calMonth, 0).getDate();
+  const monthStr = `${calYear}-${String(calMonth).padStart(2,'0')}`;
+
+  // 発言あるメンバーだけ表示
+  const members = Object.keys(DATA).filter(m =>
+    Object.keys(DATA[m].daily).some(d => d.startsWith(monthStr))
+  ).sort((a,b) => DATA[b].total - DATA[a].total);
+
+  const grid = document.getElementById('calendar-grid');
+
+  const weekDays = ['日','月','火','水','木','金','土'];
+
+  // ヘッダー行（日付）
+  let html = `<div class="cal-row cal-header-row">
+    <div class="cal-member-name"></div>
+    ${Array.from({length:daysInMonth},(_,i)=>`<div class="cal-day-label">${i+1}</div>`).join('')}
+  </div>`;
+  // 曜日行
+  html += `<div class="cal-row cal-header-row">
+    <div class="cal-member-name"></div>
+    ${Array.from({length:daysInMonth},(_,i)=>{
+      const dow = new Date(calYear, calMonth-1, i+1).getDay();
+      const color = dow===0 ? '#f77' : dow===6 ? '#7af' : '';
+      return `<div class="cal-day-label" style="color:${color};font-weight:500;">${weekDays[dow]}</div>`;
+    }).join('')}
+  </div>`;
+
+  members.forEach(m => {
+    const daily = DATA[m].daily;
+    const vals = Array.from({length:daysInMonth},(_,i)=>{
+      const key = `${monthStr}-${String(i+1).padStart(2,'0')}`;
+      return daily[key] || 0;
+    });
+    const max = Math.max(...vals, 1);
+    const cells = vals.map((v,i) => {
+      let heat = 0;
+      if (v > 0) heat = Math.min(5, Math.ceil(v / max * 5));
+      const title = v > 0 ? `${i+1}日: ${v}件` : '';
+      return `<div class="cal-cell heat-${heat}" title="${title}"></div>`;
+    }).join('');
+    html += `<div class="cal-row">
+      <div class="cal-member-name" title="${m}">${m}</div>
+      ${cells}
+    </div>`;
+  });
+
+  grid.innerHTML = html;
+}
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 12) { calMonth = 1; calYear++; }
+  if (calMonth < 1) { calMonth = 12; calYear--; }
+  renderCalendar();
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// 初期化
+renderRanking();
+renderCalendar();
+</script>
+</body>
+</html>
