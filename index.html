@@ -283,6 +283,49 @@
   .legend-cell {
     width: 16px; height: 16px; border-radius: 3px;
   }
+
+  .diet-intro {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.4rem;
+    margin-bottom: 1.5rem;
+    font-size: 12.5px;
+    color: var(--text2);
+    line-height: 1.7;
+  }
+  .diet-intro b { color: var(--text); }
+
+  .diet-table-wrap { overflow-x: auto; }
+  .diet-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 620px;
+    font-size: 12.5px;
+  }
+  .diet-table th, .diet-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 6px 8px;
+    text-align: center;
+  }
+  .diet-table thead th {
+    color: var(--text2);
+    font-weight: 500;
+    font-size: 11px;
+  }
+  .diet-table td.diet-date {
+    text-align: left;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  .diet-table tr.is-today td.diet-date { color: var(--accent); font-weight: 700; }
+  .diet-check {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .diet-table tr.is-future { opacity: 0.35; }
 </style>
 </head>
 <body>
@@ -298,6 +341,7 @@
   <nav class="nav">
     <button class="nav-btn active" onclick="showPage('ranking', event)">ランキング</button>
     <button class="nav-btn" onclick="showPage('calendar', event)">履歴カレンダー</button>
+    <button class="nav-btn" onclick="showPage('diet', event)">8月ダイエット</button>
   </nav>
 </div>
 
@@ -348,6 +392,50 @@
     </div>
     <div style="margin-top:1rem; overflow-x:auto;">
       <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+  </div>
+
+  <div class="page" id="page-diet">
+    <div class="diet-intro">
+      甲状腺機能低下症と付き合いながらの無理のないペースで続ける、8月の4本柱。<br>
+      <b>ロングブレスダイエット</b>(朝晩1セットずつ)/ <b>スポーツジム</b>(週2〜3回)/
+      <b>食事記録</b>(毎日、写真かアプリでOK)/ <b>ピラティス</b>(週1回)。<br>
+      チェックは端末のブラウザに保存されます。
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">連続達成日数</div>
+        <div class="stat-value accent" id="diet-stat-streak">...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">食事記録の実施率</div>
+        <div class="stat-value green" id="diet-stat-meal">...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ジム(週2〜3回目標)</div>
+        <div class="stat-value gold" id="diet-stat-gym">...</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ピラティス(週1回目標)</div>
+        <div class="stat-value" id="diet-stat-pilates">...</div>
+      </div>
+    </div>
+
+    <div class="diet-table-wrap">
+      <table class="diet-table">
+        <thead>
+          <tr>
+            <th style="text-align:left;">日付</th>
+            <th>ロングブレス朝</th>
+            <th>ロングブレス晩</th>
+            <th>ジム</th>
+            <th>食事記録</th>
+            <th>ピラティス</th>
+          </tr>
+        </thead>
+        <tbody id="diet-table-body"></tbody>
+      </table>
     </div>
   </div>
 
@@ -491,6 +579,95 @@ function showPage(id, event) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
 }
+
+// --- 8月ダイエットトラッカー ---
+const DIET_STORAGE_KEY = 'augustDietTracker2026';
+const DIET_ITEMS = ['morning', 'evening', 'gym', 'meal', 'pilates'];
+const DIET_YEAR = 2026;
+const DIET_MONTH = 8;
+
+function loadDietData() {
+  try {
+    return JSON.parse(localStorage.getItem(DIET_STORAGE_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveDietData(data) {
+  localStorage.setItem(DIET_STORAGE_KEY, JSON.stringify(data));
+}
+
+function toggleDietItem(dateStr, item, checked) {
+  const data = loadDietData();
+  if (!data[dateStr]) data[dateStr] = {};
+  data[dateStr][item] = checked;
+  saveDietData(data);
+  updateDietStats(data);
+}
+
+function isoDate(y, m, d) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function renderDietTracker() {
+  const data = loadDietData();
+  const daysInMonth = new Date(DIET_YEAR, DIET_MONTH, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const weekDays = ['日', '月', '火', '水', '木', '金', '土'];
+  const body = document.getElementById('diet-table-body');
+
+  let html = '';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = isoDate(DIET_YEAR, DIET_MONTH, d);
+    const dow = new Date(DIET_YEAR, DIET_MONTH - 1, d).getDay();
+    const entry = data[dateStr] || {};
+    const rowClass = dateStr === todayStr ? 'is-today' : (dateStr > todayStr ? 'is-future' : '');
+    html += `<tr class="${rowClass}">
+      <td class="diet-date">${DIET_MONTH}/${d} (${weekDays[dow]})</td>
+      ${DIET_ITEMS.map(item => `<td><input type="checkbox" class="diet-check" ${entry[item] ? 'checked' : ''} onchange="toggleDietItem('${dateStr}', '${item}', this.checked)"></td>`).join('')}
+    </tr>`;
+  }
+  body.innerHTML = html;
+  updateDietStats(data);
+}
+
+function updateDietStats(data) {
+  const daysInMonth = new Date(DIET_YEAR, DIET_MONTH, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // 連続達成日数: 今日から遡って、朝晩ロングブレス+食事記録が揃っている日数
+  let streak = 0;
+  for (let d = new Date(); ; d.setDate(d.getDate() - 1)) {
+    const dateStr = d.toISOString().slice(0, 10);
+    if (dateStr < isoDate(DIET_YEAR, DIET_MONTH, 1) || dateStr > todayStr) break;
+    const entry = data[dateStr];
+    if (entry && entry.morning && entry.evening && entry.meal) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  let mealDone = 0, mealTotal = 0, gymCount = 0, pilatesCount = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = isoDate(DIET_YEAR, DIET_MONTH, d);
+    if (dateStr > todayStr) continue;
+    mealTotal++;
+    const entry = data[dateStr] || {};
+    if (entry.meal) mealDone++;
+    if (entry.gym) gymCount++;
+    if (entry.pilates) pilatesCount++;
+  }
+  const mealPct = mealTotal > 0 ? Math.round(mealDone / mealTotal * 100) : 0;
+
+  document.getElementById('diet-stat-streak').innerHTML = streak + '<span style="font-size:14px;color:var(--text2)"> 日</span>';
+  document.getElementById('diet-stat-meal').textContent = mealPct + '%';
+  document.getElementById('diet-stat-gym').innerHTML = gymCount + '<span style="font-size:14px;color:var(--text2)"> 回</span>';
+  document.getElementById('diet-stat-pilates').innerHTML = pilatesCount + '<span style="font-size:14px;color:var(--text2)"> 回</span>';
+}
+
+renderDietTracker();
 </script>
 </body>
 </html>
