@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ととモニ VC参加トラッカー</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3250;
+    --accent: #7c6ef7; --accent2: #4ecdc4; --gold: #f7c948;
+    --text: #e8eaf6; --text2: #8890b5; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans JP', sans-serif; min-height: 100vh; }
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 100%);
+    border-bottom: 1px solid var(--border); padding: 1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { font-size: 24px; }
+  .logo-title { font-size: 18px; font-weight: 700; letter-spacing: 0.05em; }
+  .logo-sub { font-size: 11px; color: var(--text2); }
+  .back-link { color: var(--text2); font-size: 13px; text-decoration: none; border: 1px solid var(--border); padding: 6px 14px; border-radius: 8px; }
+  .back-link:hover { color: var(--text); border-color: var(--accent); }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 1.2rem 1rem 4rem; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin: 1rem 0 1.4rem; }
+  .month-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text2);
+    padding: 6px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: inherit;
+  }
+  .month-btn.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  h2 { font-size: 15px; margin: 1.6rem 0 0.7rem; display: flex; align-items: center; gap: 8px; }
+  h2 .tag { font-size: 11px; color: var(--text2); font-weight: 400; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .ev-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; cursor: pointer; }
+  .ev-date { font-weight: 700; font-size: 14px; }
+  .ev-ch { color: var(--accent2); font-size: 13px; }
+  .ev-stats { margin-left: auto; color: var(--text2); font-size: 12.5px; }
+  .ev-list { margin-top: 10px; display: none; flex-direction: column; gap: 5px; }
+  .card.open .ev-list { display: flex; }
+  .p-row { display: flex; align-items: center; gap: 8px; background: var(--surface2); border-radius: 8px; padding: 6px 10px; font-size: 13px; }
+  .p-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .p-time { color: var(--text2); font-size: 12px; }
+  .p-min { font-weight: 700; min-width: 52px; text-align: right; }
+  .rank-item { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 6px; }
+  .rank-num { width: 24px; text-align: center; color: var(--text2); font-weight: 700; font-size: 13px; }
+  .rank-item:nth-child(1) .rank-num { color: var(--gold); }
+  .rank-name { flex: 1.2; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-bar-wrap { flex: 2; min-width: 70px; }
+  .rank-bar-bg { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+  .rank-bar-fill { background: linear-gradient(90deg, var(--accent), var(--accent2)); height: 100%; border-radius: 99px; }
+  .rank-val { min-width: 108px; text-align: right; font-size: 12.5px; color: var(--text2); }
+  .rank-val b { color: var(--text); font-size: 13.5px; }
+  .empty { color: var(--text2); text-align: center; padding: 2.5rem 0; font-size: 13.5px; }
+  .note { color: var(--text2); font-size: 11.5px; margin-top: 1.6rem; line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <span class="logo-icon">🎧</span>
+    <div>
+      <div class="logo-title">ととモニ VC参加トラッカー</div>
+      <div class="logo-sub">ボイスチャンネルの参加記録（聞くだけ参加もカウント）</div>
+    </div>
+  </div>
+  <a class="back-link" href="index.html">💬 発言トラッカーへ</a>
+</div>
+<div class="wrap">
+  <div class="controls" id="months"></div>
+  <div id="content"><div class="empty">読み込み中…</div></div>
+  <div class="note">
+    🎤＝マイクON（発言できる状態）で参加／🎧＝ミュートのまま参加（聞き専）<br>
+    ※実際に声を出したかどうかは記録されません。1分未満の入退室はカウントしていません。<br>
+    ※記録はイベント後、数分〜十数分で自動反映されます。
+  </div>
+</div>
+<script>
+let LOG = [];
+let month = null;
+
+function fmtMin(m) {
+  if (m >= 60) return Math.floor(m / 60) + '時間' + Math.round(m % 60) + '分';
+  return Math.round(m) + '分';
+}
+
+function render() {
+  const c = document.getElementById('content');
+  const rows = LOG.filter(r => r.date && r.date.startsWith(month));
+  if (!rows.length) { c.innerHTML = '<div class="empty">この月の記録はまだありません🐾</div>'; return; }
+
+  // イベント別（日付+チャンネル）
+  const evs = {};
+  rows.forEach(r => {
+    const k = r.date + '|' + r.ch;
+    (evs[k] = evs[k] || []).push(r);
+  });
+  const evKeys = Object.keys(evs).sort().reverse();
+  let html = '<h2>📅 イベント別 <span class="tag">タップで参加者を表示</span></h2>';
+  evKeys.forEach(k => {
+    const [d, ch] = k.split('|');
+    const list = evs[k].slice().sort((a, b) => b.min - a.min);
+    const names = new Set(list.map(r => r.name));
+    const dd = new Date(d + 'T00:00:00');
+    const wd = ['日','月','火','水','木','金','土'][dd.getDay()];
+    html += `<div class="card"><div class="ev-head" onclick="this.parentElement.classList.toggle('open')">
+      <span class="ev-date">${d.slice(5).replace('-', '/')}(${wd})</span>
+      <span class="ev-ch">${ch}</span>
+      <span class="ev-stats">👥 ${names.size}人</span></div><div class="ev-list">`;
+    list.forEach(r => {
+      html += `<div class="p-row"><span>${r.mic === 'on' ? '🎤' : '🎧'}</span>
+        <span class="p-name">${r.name}</span>
+        <span class="p-time">${r.in}〜${r.out}</span>
+        <span class="p-min">${fmtMin(r.min)}</span></div>`;
+    });
+    html += '</div></div>';
+  });
+
+  // 人別集計
+  const ppl = {};
+  rows.forEach(r => {
+    const p = ppl[r.name] = ppl[r.name] || { min: 0, days: new Set(), mic: 0, n: 0 };
+    p.min += r.min; p.days.add(r.date + r.ch); p.n++;
+    if (r.mic === 'on') p.mic++;
+  });
+  const names = Object.keys(ppl).sort((a, b) => ppl[b].min - ppl[a].min);
+  const max = ppl[names[0]].min || 1;
+  html += '<h2>🏆 人別（合計時間） <span class="tag">' + month.replace('-', '年') + '月</span></h2>';
+  names.forEach((n, i) => {
+    const p = ppl[n];
+    html += `<div class="rank-item"><span class="rank-num">${i + 1}</span>
+      <span class="rank-name">${n}</span>
+      <div class="rank-bar-wrap"><div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${Math.max(4, p.min / max * 100)}%"></div></div></div>
+      <span class="rank-val"><b>${fmtMin(p.min)}</b>・${p.days.size}回</span></div>`;
+  });
+  c.innerHTML = html;
+}
+
+function renderMonths() {
+  const ms = [...new Set(LOG.map(r => (r.date || '').slice(0, 7)))].filter(Boolean).sort().reverse();
+  if (!ms.length) { const d = new Date(); ms.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')); }
+  month = month || ms[0];
+  document.getElementById('months').innerHTML = ms.map(m =>
+    `<button class="month-btn${m === month ? ' active' : ''}" onclick="month='${m}';renderMonths();render()">${m.replace('-', '年')}月</button>`).join('');
+}
+
+fetch('vc_log.json?t=' + Date.now())
+  .then(r => r.ok ? r.json() : [])
+  .then(j => { LOG = Array.isArray(j) ? j : []; renderMonths(); render(); })
+  .catch(() => { document.getElementById('content').innerHTML = '<div class="empty">記録はまだありません🐾（計測が始まるとここに表示されます）</div>'; renderMonths(); });
+</script>
+</body>
+</html>
