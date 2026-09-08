@@ -299,6 +299,7 @@
     <button class="nav-btn active" onclick="showPage('ranking', event)">ランキング</button>
     <button class="nav-btn" onclick="showPage('calendar', event)">履歴カレンダー</button>
     <button class="nav-btn" onclick="location.href='vc.html'">🎧 VC参加</button>
+    <button class="nav-btn" onclick="downloadCsv()">📥 CSV</button>
   </nav>
 </div>
 
@@ -491,6 +492,32 @@ function showPage(id, event) {
   document.getElementById('page-'+id).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
+}
+
+function downloadCsv() {
+  const names = Object.keys(DATA);
+  if (!names.length) { alert('まだデータがありません'); return; }
+  const csvEscape = (v) => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [['名前', '日付', '発言数'].map(csvEscape).join(',')];
+  names.forEach(name => {
+    const daily = DATA[name].daily || {};
+    Object.keys(daily).sort().forEach(date => {
+      lines.push([name, date, daily[date]].map(csvEscape).join(','));
+    });
+  });
+  const csv = '﻿' + lines.join('\n'); // BOM付きでExcelでも文字化けしない
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'message_log_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 </script>
 </body>
