@@ -70,7 +70,10 @@
       <div class="logo-sub">ボイスチャンネルの参加記録（聞くだけ参加もカウント）</div>
     </div>
   </div>
-  <a class="back-link" href="index.html">💬 発言トラッカーへ</a>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <a class="back-link" href="index.html">💬 発言トラッカーへ</a>
+    <a class="back-link" href="#" onclick="downloadCsv();return false;">📥 CSVダウンロード</a>
+  </div>
 </div>
 <div class="wrap">
   <div class="controls" id="months"></div>
@@ -148,6 +151,30 @@ function renderMonths() {
   month = month || ms[0];
   document.getElementById('months').innerHTML = ms.map(m =>
     `<button class="month-btn${m === month ? ' active' : ''}" onclick="month='${m}';renderMonths();render()">${m.replace('-', '年')}月</button>`).join('');
+}
+
+function downloadCsv() {
+  if (!LOG.length) { alert('まだデータがありません'); return; }
+  const header = ['日付', 'チャンネル', '名前', '入室', '退室', '分', 'マイク状態'];
+  const csvEscape = (v) => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const rows = LOG.slice().sort((a, b) => (a.date + a.in).localeCompare(b.date + b.in));
+  const lines = [header.map(csvEscape).join(',')];
+  rows.forEach(r => {
+    lines.push([r.date, r.ch, r.name, r.in, r.out, r.min, r.mic].map(csvEscape).join(','));
+  });
+  const csv = '﻿' + lines.join('\n'); // BOM付きでExcelでも文字化けしない
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'vc_log_' + new Date().toISOString().slice(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 fetch('vc_log.json?t=' + Date.now())
