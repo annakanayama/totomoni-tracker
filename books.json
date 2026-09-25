@@ -25,8 +25,7 @@
       "comment": "島根の群言堂の暮らしの様子が書かれている本。大好きな1冊",
       "date": "2026-09-25",
       "url": "",
-      "asin": "4259565168",
-      "cover": "https://raw.githubusercontent.com/annakanayama/totomoni-tracker/main/images/covers/aru-mono-wo-ikashikiru.jpg"
+      "asin": "4259565168"
     }
   ],
   "ペーター": [
@@ -35,6 +34,15 @@
       "comment": "",
       "date": "2026-09-25",
       "url": ""
+    }
+  ],
+  "いいしま": [
+    {
+      "title": "東京すみっこご飯",
+      "comment": "孤食の時代、東京の片隅で、見知らぬ人同士が食卓を囲み、優しさのこもった手料理をいただく。こんな場所があれば素敵だなと思って読んでいました☺️このシリーズ好きなんです☺️",
+      "date": "2026-09-25",
+      "url": "",
+      "tracking_id": "keichizuhon33-22"
     }
   ]
 }
