@@ -9,5 +9,16 @@
     "posted": true,
     "done": true,
     "message_id": 1557852675616276520
+  },
+  {
+    "id": 1792065357626,
+    "channel_id": 1514952168749142026,
+    "url": "https://youtu.be/1B-zAgefxZ4",
+    "message": "【限定公開】朝活経理セミナー：青色申告と白色申告どっちがいい？",
+    "publish_at": "2026-10-16T05:30:00+09:00",
+    "delete_at": "2026-10-19T08:00:00+09:00",
+    "posted": false,
+    "done": false,
+    "message_id": null
   }
 ]
