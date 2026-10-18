@@ -18,7 +18,7 @@
     "publish_at": "2026-10-16T05:30:00+09:00",
     "delete_at": "2026-10-19T08:00:00+09:00",
     "posted": true,
-    "done": false,
+    "done": true,
     "message_id": 1560389330042617868
   }
 ]
