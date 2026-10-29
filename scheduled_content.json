@@ -20,5 +20,16 @@
     "posted": true,
     "done": true,
     "message_id": 1560389330042617868
+  },
+  {
+    "id": 1793280017366,
+    "channel_id": 1514952168749142026,
+    "url": "https://www.youtube.com/live/jt5H9VlOUPw?si=0CgpnQan7RAeBF-X",
+    "message": "質問会盛り上がりました！アーカイブです～！物販系の質問が多かったので、またまとめてシェアしますねぇ✨",
+    "publish_at": "2026-10-30T05:30:00+09:00",
+    "delete_at": "2026-11-02T09:00:00+09:00",
+    "posted": false,
+    "done": false,
+    "message_id": null
   }
 ]
